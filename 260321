@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>물고기 게임</title>
+<style>
+  canvas {
+    background: lightblue;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let mouseX = 400;
+let mouseY = 250;
+
+document.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+});
+
+// 플레이어 물고기
+let player = {
+  x: 400,
+  y: 250,
+  size: 20
+};
+
+// 먹이 & 적
+let fishes = [];
+
+function spawnFish() {
+  let size = Math.random() * 30 + 5;
+  fishes.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: size,
+    speed: Math.random() * 2 + 1
+  });
+}
+
+setInterval(spawnFish, 1000);
+
+// 충돌 체크
+function isColliding(a, b) {
+  let dx = a.x - b.x;
+  let dy = a.y - b.y;
+  let dist = Math.sqrt(dx*dx + dy*dy);
+  return dist < a.size + b.size;
+}
+
+// 게임 루프
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 플레이어 이동
+  player.x += (mouseX - player.x) * 0.05;
+  player.y += (mouseY - player.y) * 0.05;
+
+  // 플레이어 그리기
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI*2);
+  ctx.fillStyle = "blue";
+  ctx.fill();
+
+  // 물고기 처리
+  for (let i = fishes.length - 1; i >= 0; i--) {
+    let f = fishes[i];
+
+    f.x += Math.cos(f.y) * f.speed;
+    f.y += Math.sin(f.x) * f.speed;
+
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
+    ctx.fillStyle = f.size < player.size ? "green" : "red";
+    ctx.fill();
+
+    // 충돌
+    if (isColliding(player, f)) {
+      if (player.size > f.size) {
+        player.size += f.size * 0.2;
+        fishes.splice(i, 1);
+      } else {
+        alert("게임 오버!");
+        location.reload();
+      }
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
