@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>물고기 게임 업그레이드</title>
+<style>
+  body { margin: 0; overflow: hidden; }
+  canvas { background: linear-gradient(#6ec6ff, #0288d1); display: block; }
+  #ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: sans-serif;
+    font-size: 18px;
+  }
+  #startScreen, #gameOverScreen {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: white;
+    font-size: 30px;
+    background: rgba(0,0,0,0.5);
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div id="ui"></div>
+
+<div id="startScreen">
+  <div>🐟 물고기 게임</div>
+  <button onclick="startGame()">시작</button>
+</div>
+
+<div id="gameOverScreen" style="display:none;">
+  <div id="finalScore"></div>
+  <button onclick="restartGame()">다시하기</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const ui = document.getElementById("ui");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+document.addEventListener("mousemove", e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+let boosting = false;
+document.addEventListener("keydown", e => {
+  if (e.key === "Shift") boosting = true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "Shift") boosting = false;
+});
+
+let player, fishes, score, level, gameRunning;
+
+function startGame() {
+  document.getElementById("startScreen").style.display = "none";
+  init();
+}
+
+function restartGame() {
+  document.getElementById("gameOverScreen").style.display = "none";
+  init();
+}
+
+function init() {
+  player = { x: mouseX, y: mouseY, size: 20, speed: 0.05 };
+  fishes = [];
+  score = 0;
+  level = 1;
+  gameRunning = true;
+}
+
+function spawnFish() {
+  let size = Math.random() * 30 + 5 + level;
+  fishes.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: size,
+    vx: (Math.random() - 0.5) * (2 + level * 0.3),
+    vy: (Math.random() - 0.5) * (2 + level * 0.3)
+  });
+}
+
+setInterval(() => {
+  if (gameRunning) spawnFish();
+}, 800);
+
+function isColliding(a, b) {
+  let dx = a.x - b.x;
+  let dy = a.y - b.y;
+  return Math.sqrt(dx*dx + dy*dy) < a.size + b.size;
+}
+
+function update() {
+  if (!gameRunning) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 플레이어 이동
+  let speedMultiplier = boosting ? 0.15 : player.speed;
+  player.x += (mouseX - player.x) * speedMultiplier;
+  player.y += (mouseY - player.y) * speedMultiplier;
+
+  // 플레이어
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+  ctx.fillStyle = boosting ? "yellow" : "blue";
+  ctx.fill();
+
+  // 물고기
+  for (let i = fishes.length - 1; i >= 0; i--) {
+    let f = fishes[i];
+    f.x += f.vx;
+    f.y += f.vy;
+
+    // 벽 튕김
+    if (f.x < 0 || f.x > canvas.width) f.vx *= -1;
+    if (f.y < 0 || f.y > canvas.height) f.vy *= -1;
+
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+    ctx.fillStyle = f.size < player.size ? "lime" : "red";
+    ctx.fill();
+
+    // 충돌
+    if (isColliding(player, f)) {
+      if (player.size > f.size) {
+        score += Math.floor(f.size);
+        player.size += f.size * 0.1;
+        fishes.splice(i, 1);
+
+        // 레벨업
+        if (score > level * 200) level++;
+      } else {
+        endGame();
+      }
+    }
+  }
+
+  ui.innerHTML = `점수: ${score} | 레벨: ${level}`;
+
+  requestAnimationFrame(update);
+}
+
+function endGame() {
+  gameRunning = false;
+  document.getElementById("gameOverScreen").style.display = "flex";
+  document.getElementById("finalScore").innerText = `점수: ${score}`;
+}
+
+update();
+</script>
+
+</body>
+</html>
