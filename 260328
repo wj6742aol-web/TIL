@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>물고기 게임 PRO</title>
+<style>
+  body { margin: 0; overflow: hidden; }
+  canvas { display: block; background: #0288d1; }
+  #ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-family: sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<div id="ui"></div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const ui = document.getElementById("ui");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+document.addEventListener("mousemove", e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+let boosting = false;
+document.addEventListener("keydown", e => {
+  if (e.key === "Shift") boosting = true;
+});
+document.addEventListener("keyup", e => {
+  if (e.key === "Shift") boosting = false;
+});
+
+let player = {
+  x: mouseX,
+  y: mouseY,
+  size: 20,
+  hp: 100,
+  boost: 100
+};
+
+let fishes = [];
+let particles = [];
+let score = 0;
+
+function spawnFish() {
+  let size = Math.random() * 40 + 5;
+  fishes.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size,
+    vx: (Math.random() - 0.5) * 2,
+    vy: (Math.random() - 0.5) * 2
+  });
+}
+setInterval(spawnFish, 700);
+
+function isColliding(a, b) {
+  let dx = a.x - b.x;
+  let dy = a.y - b.y;
+  return Math.sqrt(dx*dx + dy*dy) < a.size + b.size;
+}
+
+function spawnParticles(x, y) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 0.5) * 4,
+      life: 30
+    });
+  }
+}
+
+function drawFish(x, y, size, angle, color) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size, size/2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 꼬리
+  ctx.beginPath();
+  ctx.moveTo(-size, 0);
+  ctx.lineTo(-size - size/2, size/2);
+  ctx.lineTo(-size - size/2, -size/2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 배경 물결 느낌
+  ctx.fillStyle = "rgba(255,255,255,0.05)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 플레이어 이동
+  let dx = mouseX - player.x;
+  let dy = mouseY - player.y;
+  let angle = Math.atan2(dy, dx);
+
+  let speed = boosting && player.boost > 0 ? 0.2 : 0.05;
+
+  if (boosting && player.boost > 0) {
+    player.boost -= 1;
+  } else {
+    player.boost += 0.5;
+  }
+
+  player.boost = Math.max(0, Math.min(100, player.boost));
+
+  player.x += dx * speed;
+  player.y += dy * speed;
+
+  drawFish(player.x, player.y, player.size, angle, "yellow");
+
+  // 물고기
+  for (let i = fishes.length - 1; i >= 0; i--) {
+    let f = fishes[i];
+
+    // AI: 큰 물고기는 플레이어 추적
+    if (f.size > player.size) {
+      let dx = player.x - f.x;
+      let dy = player.y - f.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      f.vx += (dx / dist) * 0.05;
+      f.vy += (dy / dist) * 0.05;
+    }
+
+    f.x += f.vx;
+    f.y += f.vy;
+
+    let angle = Math.atan2(f.vy, f.vx);
+
+    drawFish(f.x, f.y, f.size, angle,
+      f.size < player.size ? "lime" : "red"
+    );
+
+    if (isColliding(player, f)) {
+      if (player.size > f.size) {
+        score += Math.floor(f.size);
+        player.size += f.size * 0.05;
+        spawnParticles(f.x, f.y);
+        fishes.splice(i, 1);
+      } else {
+        player.hp -= 1;
+        if (player.hp <= 0) {
+          alert("게임 오버! 점수: " + score);
+          location.reload();
+        }
+      }
+    }
+  }
+
+  // 파티클
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+
+    ctx.fillStyle = "white";
+    ctx.fillRect(p.x, p.y, 2, 2);
+
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  ui.innerHTML = `
+    점수: ${score}<br>
+    HP: ${player.hp}<br>
+    부스트: ${Math.floor(player.boost)}
+  `;
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
