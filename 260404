@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>메이플 사냥 기록 앱</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .box {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-top: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background: #333;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🎮 메이플 사냥 기록 앱 (PC)</h1>
+
+  <div class="box">
+    <button onclick="startHunt()">사냥 시작</button>
+    <button onclick="endHunt()">사냥 종료</button>
+
+    <label>시작 경험치 (%)</label>
+    <input id="startExp" type="number" step="0.01">
+
+    <label>종료 경험치 (%)</label>
+    <input id="endExp" type="number" step="0.01">
+
+    <label>시작 솔 에르다 조각</label>
+    <input id="startShard" type="number">
+
+    <label>종료 솔 에르다 조각</label>
+    <input id="endShard" type="number">
+  </div>
+
+  <div class="box">
+    <h3>📊 기록</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>시간(분)</th>
+          <th>획득 경험치</th>
+          <th>시간당 경험치</th>
+          <th>획득 조각</th>
+          <th>시간당 조각</th>
+        </tr>
+      </thead>
+      <tbody id="logTable"></tbody>
+    </table>
+  </div>
+
+<script>
+let startTime = null;
+
+function startHunt() {
+  startTime = new Date();
+  alert("사냥 시작!");
+}
+
+function endHunt() {
+  if (!startTime) {
+    alert("먼저 사냥 시작을 눌러주세요.");
+    return;
+  }
+
+  const endTime = new Date();
+  const minutes = Math.floor((endTime - startTime) / 60000);
+
+  const startExp = parseFloat(startExpInput.value);
+  const endExp = parseFloat(endExpInput.value);
+  const startShard = parseInt(startShardInput.value);
+  const endShard = parseInt(endShardInput.value);
+
+  const gainExp = endExp - startExp;
+  const gainShard = endShard - startShard;
+
+  const expPerHour = (gainExp / minutes) * 60;
+  const shardPerHour = (gainShard / minutes) * 60;
+
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${new Date().toLocaleDateString()}</td>
+    <td>${minutes}</td>
+    <td>${gainExp.toFixed(2)}%</td>
+    <td>${expPerHour.toFixed(3)}%</td>
+    <td>${gainShard}</td>
+    <td>${shardPerHour.toFixed(1)}</td>
+  `;
+  logTable.appendChild(row);
+
+  startTime = null;
+}
+
+const startExpInput = document.getElementById("startExp");
+const endExpInput = document.getElementById("endExp");
+const startShardInput = document.getElementById("startShard");
+const endShardInput = document.getElementById("endShard");
+const logTable = document.getElementById("logTable");
+</script>
+
+</body>
+</html>
