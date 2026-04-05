@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>메이플 사냥 기록 앱 PRO</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #1e1e1e;
+  color: white;
+  padding: 20px;
+}
+.box {
+  background: #2a2a2a;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+input {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+}
+button {
+  margin-top: 8px;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #444;
+  padding: 6px;
+  text-align: center;
+}
+th {
+  background: #333;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 메이플 사냥 기록 앱 PRO</h1>
+
+<div class="box">
+  <label>캐릭터</label>
+  <input id="char">
+
+  <label>사냥터</label>
+  <input id="map">
+
+  <button onclick="startHunt()">사냥 시작</button>
+  <button onclick="endHunt()">사냥 종료</button>
+
+  <label>시작 경험치 (%)</label>
+  <input id="startExp" type="number" step="0.01">
+
+  <label>종료 경험치 (%)</label>
+  <input id="endExp" type="number" step="0.01">
+
+  <label>시작 조각</label>
+  <input id="startShard" type="number">
+
+  <label>종료 조각</label>
+  <input id="endShard" type="number">
+</div>
+
+<div class="box">
+  <h3>📊 기록</h3>
+  <button onclick="downloadCSV()">CSV 다운로드</button>
+  <table>
+    <thead>
+      <tr>
+        <th>날짜</th>
+        <th>캐릭터</th>
+        <th>사냥터</th>
+        <th>시간</th>
+        <th>경험치</th>
+        <th>경험치/시간</th>
+        <th>조각</th>
+        <th>조각/시간</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody id="logTable"></tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h3>📈 평균 효율</h3>
+  <p id="avgExp">평균 경험치: 0</p>
+  <p id="avgShard">평균 조각: 0</p>
+</div>
+
+<script>
+
+let startTime = null;
+let logs = JSON.parse(localStorage.getItem("mapleLogs") || "[]");
+
+function startHunt() {
+  startTime = new Date();
+  alert("사냥 시작!");
+}
+
+function endHunt() {
+  if (!startTime) return alert("시작 먼저");
+
+  const minutes = Math.max(1, Math.floor((new Date() - startTime) / 60000));
+
+  const log = {
+    date: new Date().toLocaleDateString(),
+    char: char.value,
+    map: map.value,
+    time: minutes,
+    exp: (endExp.value - startExp.value).toFixed(2),
+    expH: ((endExp.value - startExp.value) / minutes * 60).toFixed(3),
+    shard: endShard.value - startShard.value,
+    shardH: ((endShard.value - startShard.value) / minutes * 60).toFixed(1)
+  };
+
+  logs.push(log);
+  save();
+  render();
+
+  startTime = null;
+}
+
+function save() {
+  localStorage.setItem("mapleLogs", JSON.stringify(logs));
+}
+
+function render() {
+  logTable.innerHTML = "";
+
+  let totalExp = 0;
+  let totalShard = 0;
+
+  logs.forEach((l, i) => {
+    totalExp += parseFloat(l.expH);
+    totalShard += parseFloat(l.shardH);
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${l.date}</td>
+      <td>${l.char}</td>
+      <td>${l.map}</td>
+      <td>${l.time}</td>
+      <td>${l.exp}%</td>
+      <td>${l.expH}</td>
+      <td>${l.shard}</td>
+      <td>${l.shardH}</td>
+      <td><button onclick="del(${i})">X</button></td>
+    `;
+    logTable.appendChild(row);
+  });
+
+  if (logs.length > 0) {
+    avgExp.innerText = "평균 경험치/시간: " + (totalExp / logs.length).toFixed(3);
+    avgShard.innerText = "평균 조각/시간: " + (totalShard / logs.length).toFixed(1);
+  }
+}
+
+function del(i) {
+  logs.splice(i, 1);
+  save();
+  render();
+}
+
+function downloadCSV() {
+  let csv = "날짜,캐릭터,사냥터,시간,경험치,경험치/시간,조각,조각/시간\n";
+  logs.forEach(l => {
+    csv += `${l.date},${l.char},${l.map},${l.time},${l.exp},${l.expH},${l.shard},${l.shardH}\n`;
+  });
+
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "maple_log.csv";
+  a.click();
+}
+
+render();
+
+</script>
+
+</body>
+</html>
