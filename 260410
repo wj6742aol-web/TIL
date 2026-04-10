@@ -1,0 +1,32 @@
+import tkinter as tk
+import random
+
+excuses = [
+    "오늘은 중력이 평소보다 강해서 못 했어요",
+    "집 앞 고양이가 나를 붙잡고 안 놔줬어요",
+    "와이파이가 제 의지를 막았어요",
+    "손가락이 갑자기 파업했어요",
+    "컴퓨터가 저를 무시했어요",
+    "시간이 저만 빼고 빨리 갔어요",
+    "의욕이 잠시 로그아웃했습니다",
+    "눈이 감겼는데 자동 저장이 안 됐어요",
+    "냉장고가 자꾸 불러서 집중이 안 됐어요",
+    "오늘은 그냥 그런 날이에요"
+]
+
+def generate_excuse():
+    result = random.choice(excuses)
+    label.config(text=result)
+
+# 창 생성
+app = tk.Tk()
+app.title("쓸모없는 핑계 생성기")
+app.geometry("400x200")
+
+label = tk.Label(app, text="버튼을 눌러 핑계를 생성하세요", wraplength=300)
+label.pack(pady=20)
+
+btn = tk.Button(app, text="핑계 생성", command=generate_excuse)
+btn.pack()
+
+app.mainloop()
