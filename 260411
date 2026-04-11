@@ -1,0 +1,26 @@
+import tkinter as tk
+import random
+
+count = 0
+
+def increase_count():
+    delay = random.randint(1000, 5000)  # 1~5초 랜덤 지연
+    label.config(text="올리는 중... (기다려)")
+    app.after(delay, actually_increase)
+
+def actually_increase():
+    global count
+    count += 1
+    label.config(text=f"현재 숫자: {count}")
+
+app = tk.Tk()
+app.title("진짜 느린 카운터")
+app.geometry("300x200")
+
+label = tk.Label(app, text="버튼을 눌러보세요")
+label.pack(pady=20)
+
+btn = tk.Button(app, text="숫자 올리기", command=increase_count)
+btn.pack()
+
+app.mainloop()
