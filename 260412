@@ -1,0 +1,36 @@
+import tkinter as tk
+import random
+
+choices = ["치킨", "피자", "햄버거", "라면", "초밥", "굶기"]
+
+running = False
+
+def start_choosing():
+    global running
+    running = True
+    change_choice()
+
+def stop_choosing():
+    global running
+    running = False
+
+def change_choice():
+    if running:
+        choice = random.choice(choices)
+        label.config(text=f"👉 {choice}")
+        app.after(100, change_choice)  # 0.1초마다 계속 바뀜
+
+app = tk.Tk()
+app.title("결정 장애 버튼")
+app.geometry("300x200")
+
+label = tk.Label(app, text="버튼을 눌러 결정하세요", font=("Arial", 14))
+label.pack(pady=20)
+
+start_btn = tk.Button(app, text="결정 시작", command=start_choosing)
+start_btn.pack()
+
+stop_btn = tk.Button(app, text="결정 멈추기", command=stop_choosing)
+stop_btn.pack(pady=10)
+
+app.mainloop()
