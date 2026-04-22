@@ -1,0 +1,41 @@
+import pyperclip
+import time
+import re
+
+def clean_text(text):
+    # 앞뒤 공백 제거 + 여러 줄 정리
+    text = text.strip()
+    text = re.sub(r'\n+', '\n', text)
+    text = re.sub(r' +', ' ', text)
+    return text
+
+def analyze_text(text):
+    words = text.split()
+    char_count = len(text)
+    word_count = len(words)
+    read_time = round(word_count / 200, 2)  # 분 기준
+
+    return char_count, word_count, read_time
+
+print("📋 클립보드 감시 시작 (Ctrl+C로 종료)")
+
+last_text = ""
+
+while True:
+    text = pyperclip.paste()
+
+    if text != last_text:
+        cleaned = clean_text(text)
+        chars, words, read_time = analyze_text(cleaned)
+
+        print("\n✨ 새로운 텍스트 감지!")
+        print("-" * 40)
+        print(cleaned[:200] + ("..." if len(cleaned) > 200 else ""))
+        print("-" * 40)
+        print(f"📏 글자 수: {chars}")
+        print(f"🧩 단어 수: {words}")
+        print(f"⏱ 예상 읽기 시간: {read_time}분")
+
+        last_text = text
+
+    time.sleep(1)
