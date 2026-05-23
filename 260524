@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>롤 자랭 5인큐 포지션 매칭</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f141c;
+            color: #f0e6d2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: #c89b3c;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(200, 155, 60, 0.5);
+        }
+        .subtitle {
+            color: #a09b8c;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        .container {
+            background-color: #1a222e;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #c89b3c;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 450px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 90%;
+            height: 100px;
+            background-color: #121921;
+            border: 1px solid #5b5a56;
+            color: #fff;
+            padding: 12px;
+            border-radius: 5px;
+            resize: none;
+            font-size: 15px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        button {
+            background-color: #c89b3c;
+            color: #111;
+            border: none;
+            padding: 12px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.2s;
+            width: 95%;
+        }
+        button:hover {
+            background-color: #e0b65c;
+            box-shadow: 0 0 15px rgba(200, 155, 60, 0.8);
+        }
+        .result-board {
+            margin-top: 25px;
+            border-top: 1px solid #5b5a56;
+            padding-top: 20px;
+            text-align: left;
+        }
+        .match-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background-color: #121921;
+            border-radius: 4px;
+            border-left: 4px solid #c89b3c;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .position-label {
+            color: #00eaee;
+        }
+        .player-name {
+            color: #fff;
+        }
+        .shuffling {
+            animation: blur 0.1s infinite alternate;
+        }
+        @keyframes blur {
+            from { filter: blur(0px); }
+            to { filter: blur(1px); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⚡ 롤 자랭 5인 매칭 시스템</h1>
+    <div class="subtitle">중복 없이 한 번에 포지션을 결정합니다</div>
+    
+    <div class="container">
+        <div class="input-group">
+            <textarea id="players">멤버1&#10;멤버2&#10;멤버3&#10;멤버4&#10;멤버5</textarea>
+        </div>
+        
+        <button id="rollBtn" onclick="matchPositions()">라인 배정하기</button>
+        
+        <div class="result-board" id="resultBoard" style="display: none;">
+            <!-- 결과가 여기에 동적으로 생성됩니다 -->
+        </div>
+    </div>
+
+    <script>
+        function cryptoShuffle(array) {
+            // 암호학적 무작위성 기반의 피셔-예이츠 셔플 알고리즘
+            for (let i = array.length - 1; i > 0; i--) {
+                const randomArray = new Uint32Array(1);
+                window.crypto.getRandomValues(randomArray);
+                const j = randomArray[0] % (i + 1);
+                
+                // 요소 맞바꾸기
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function matchPositions() {
+            const textarea = document.getElementById('players');
+            const board = document.getElementById('resultBoard');
+            const btn = document.getElementById('rollBtn');
+            
+            // 이름 가져오기 및 공백 제거
+            const players = textarea.value.split('\n').map(p => p.trim()).filter(p => p !== "");
+            
+            if (players.length !== 5) {
+                alert("정확히 5명의 이름을 입력해주세요! (현재 " + players.length + "명)");
+                return;
+            }
+
+            const positions = ['TOP (탑)', 'JUG (정글)', 'MID (미드)', 'ADC (원딜)', 'SUP (서폿)'];
+            
+            btn.disabled = true;
+            board.style.display = 'block';
+            board.classList.add('shuffling');
+            
+            let count = 0;
+            // 연출용 셔플 루프 (0.5초 동안 마구 섞이는 애니메이션 효과)
+            const fx = setInterval(() => {
+                const tempPositions = cryptoShuffle([...positions]);
+                board.innerHTML = players.map((player, idx) => `
+                    <div class="match-row">
+                        <span class="position-label">${tempPositions[idx]}</span>
+                        <span class="player-name">${player}</span>
+                    </div>
+                `).join('');
+                
+                count++;
+                if (count > 10) {
+                    clearInterval(fx);
+                    board.classList.remove('shuffling');
+                    btn.disabled = false;
+                    
+                    // 최종 매칭 결과 결정
+                    const finalPositions = cryptoShuffle([...positions]);
+                    board.innerHTML = players.map((player, idx) => `
+                        <div class="match-row" style="border-left-color: #00eaee;">
+                            <span class="position-label" style="text-shadow: 0 0 5px rgba(0,234,238,0.3);">${finalPositions[idx]}</span>
+                            <span class="player-name" style="color: #f0e6d2;">${player}</span>
+                        </div>
+                    `).join('');
+                }
+            }, 50);
+        }
+    </script>
+
+</body>
+</html>
